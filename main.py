@@ -5,6 +5,7 @@ import requests
 import json
 import time  # Import time for potential delays
 from dotenv import load_dotenv
+import pathlib  # Import for directory creation
 
 # --- Configuration Loading ---
 
@@ -15,7 +16,7 @@ def load_config():
         "moralis_api_key": os.getenv("MORALIS_API_KEY"),
         "eth_wallet": os.getenv("ETH_WALLET_ADDRESS"),
         "op_wallet": os.getenv("OP_WALLET_ADDRESS"),
-***REMOVED***
+    }
     if not all(config.values()):
         print("Error: Missing configuration in .env file.")
         print("Please ensure MORALIS_API_KEY, ETH_WALLET_ADDRESS, and OP_WALLET_ADDRESS are set.")
@@ -39,12 +40,12 @@ def get_wallet_history(api_key, wallet_address, chain):
     Returns:
         list: A list containing all transaction results, or None if an error occurs.
     """
-    all_results = ***REMOVED******REMOVED***
+    all_results = []
     cursor = None
     headers = {
         "accept": "application/json",
         "X-API-Key": api_key,
-***REMOVED***
+    }
     endpoint = f"{MORALIS_API_BASE_URL}/wallets/{wallet_address}/history"
 
     print(f"Fetching history for {wallet_address} on {chain}...")
@@ -54,16 +55,16 @@ def get_wallet_history(api_key, wallet_address, chain):
             "chain": chain,
             "order": "DESC",  # Or "ASC" if you prefer chronological order
             # Add other params like 'from_date', 'to_date' if needed
-    ***REMOVED***
+        }
         if cursor:
-            params***REMOVED***"cursor"***REMOVED*** = cursor
+            params["cursor"] = cursor
 
         try:
             response = requests.get(endpoint, headers=headers, params=params)
             response.raise_for_status()  # Raise HTTPError for bad responses (4xx or 5xx)
 
             data = response.json()
-            page_results = data.get("result", ***REMOVED******REMOVED***)
+            page_results = data.get("result", [])
             if page_results:
                 all_results.extend(page_results)
                 print(f"  Fetched {len(page_results)} transactions (Total: {len(all_results)})")
@@ -81,11 +82,11 @@ def get_wallet_history(api_key, wallet_address, chain):
             print(f"Error fetching data for {wallet_address} on {chain}: {e}")
             if response is not None:
                  print(f"Response status: {response.status_code}")
-                 print(f"Response text: {response.text***REMOVED***:500***REMOVED***}...") # Print first 500 chars of error
+                 print(f"Response text: {response.text[:500]}...") # Print first 500 chars of error
             return None # Indicate error
         except json.JSONDecodeError:
             print(f"Error decoding JSON response for {wallet_address} on {chain}.")
-            print(f"Response text: {response.text***REMOVED***:500***REMOVED***}...")
+            print(f"Response text: {response.text[:500]}...")
             return None # Indicate error
         except Exception as e:
             print(f"An unexpected error occurred for {wallet_address} on {chain}: {e}")
@@ -115,28 +116,39 @@ if __name__ == "__main__":
     config = load_config()
 
     # Define output filenames
-    eth_output_file = "eth_wallet_history.json"
-    op_output_file = "op_wallet_history.json"
+    eth_output_file = "data/eth_wallet_history.json"
+    op_output_file = "data/op_wallet_history.json"
+    
+    # Ensure data directory exists
+    pathlib.Path("data").mkdir(exist_ok=True)
 
     # --- Fetch Ethereum Wallet History ---
-    eth_history = get_wallet_history(
-        config***REMOVED***"moralis_api_key"***REMOVED***,
-        config***REMOVED***"eth_wallet"***REMOVED***,
-        "eth"  # Moralis chain identifier for Ethereum Mainnet
-    )
-    if eth_history is not None:
-        save_data_to_json(eth_history, eth_output_file)
+    if not os.path.exists(eth_output_file):
+        print(f"File {eth_output_file} does not exist. Fetching Ethereum wallet history...")
+        eth_history = get_wallet_history(
+            config["moralis_api_key"],
+            config["eth_wallet"],
+            "eth"  # Moralis chain identifier for Ethereum Mainnet
+        )
+        if eth_history is not None:
+            save_data_to_json(eth_history, eth_output_file)
+    else:
+        print(f"File {eth_output_file} already exists. Skipping Ethereum data fetch.")
 
     print("-" * 20) # Separator
 
     # --- Fetch Optimism Wallet History ---
-    op_history = get_wallet_history(
-        config***REMOVED***"moralis_api_key"***REMOVED***,
-        config***REMOVED***"op_wallet"***REMOVED***,
-        "optimism"  # Moralis chain identifier for Optimism
-    )
-    if op_history is not None:
-        save_data_to_json(op_history, op_output_file)
+    if not os.path.exists(op_output_file):
+        print(f"File {op_output_file} does not exist. Fetching Optimism wallet history...")
+        op_history = get_wallet_history(
+            config["moralis_api_key"],
+            config["op_wallet"],
+            "optimism"  # Moralis chain identifier for Optimism
+        )
+        if op_history is not None:
+            save_data_to_json(op_history, op_output_file)
+    else:
+        print(f"File {op_output_file} already exists. Skipping Optimism data fetch.")
 
     print("-" * 20)
     print("Data fetching complete. Raw data saved to JSON files.")
