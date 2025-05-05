@@ -1,0 +1,24 @@
+# Virtual environment
+venv/
+/venv/
+
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Environment variables file (VERY IMPORTANT!)
+.env
+
+# IDE/Editor specific files
+.idea/
+.vscode/
+
+# OS specific files
+.DS_Store
+Thumbs.db
+
+# Output files (optional, you might want to ignore generated CSVs)
+*.csv
+*.log
