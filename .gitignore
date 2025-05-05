@@ -22,3 +22,6 @@ Thumbs.db
 # Output files (optional, you might want to ignore generated CSVs)
 *.csv
 *.log
+
+# Ignore all files in the data directory
+data/*
